@@ -6,34 +6,7 @@ import ipdb
 import re
 from BeautifulSoup import BeautifulSoup
 
-url = "https://www.ontario.ca/laws/regulation/120332"
-class_names = [
-    "ruleb-e",
-    "section-e",
-    "subsection-e",
-    "clause-e",
-    "subclause-e"
-]
-out_file = "workspace/raw.json"
 
-def parse_element(e):
-    return {
-        "html":       "".join([str(x) for x in e.contents]),
-        "text":       e.text,
-        "class_name": e.attrMap["class"]
-    }
-
-def download():
-    print("fetching {}".format(url))
-    resp = requests.get(url)
-    print("parsing html ...")
-    soup = BeautifulSoup(resp.text)
-    elements = soup("p", { "class": class_names })
-    entries = [ parse_element(e) for e in elements ]
-    print("writing {} entries to {} ...".format(len(entries), out_file))
-    with open(out_file, "w") as f:
-        f.write(json.dumps(entries, indent = 2))
-    print("done!")
 
 
 def tag_entries(entries):
@@ -142,16 +115,44 @@ def qualify_tree(node, parent=None):
     for child in node["children"]:
         qualify_tree(child, node)
 
+def download_entries():
+
+    def parse_element(e):
+        return {
+            "html":       "".join([str(x) for x in e.contents]),
+            "text":       e.text,
+            "class_name": e.attrMap["class"]
+        }
+
+    url = "https://www.ontario.ca/laws/regulation/120332"
+    class_names = [
+        "ruleb-e",
+        "section-e",
+        "subsection-e",
+        "clause-e",
+        "subclause-e"
+    ]
+
+    print("fetching {}".format(url))
+    resp = requests.get(url)
+    print("parsing html ...")
+    soup = BeautifulSoup(resp.text)
+    elements = soup("p", { "class": class_names })
+    return [ parse_element(e) for e in elements ]
+
 def main():
-    with open(out_file) as f:
-        entries = json.loads(f.read())
-        tag_entries(entries)
-        entries = stitch_fragments(entries)
-        tree = create_tree(entries)
-        qualify_tree(tree)
-        with open("workspace/tree.json", "w") as f:
-            tagged_json = json.dumps(tree, indent = 2)
-            f.write(tagged_json)
+    entries = download_entries()
+    tag_entries(entries)
+    entries = stitch_fragments(entries)
+    print("parsing {} entries into tree ...".format(len(entries)))
+    tree = create_tree(entries)
+    qualify_tree(tree)
+    out_file = "workspace/tree.json"
+    print("writing to {} ...".format(out_file))
+    with open(out_file, "w") as f:
+        tagged_json = json.dumps(tree, indent = 2)
+        f.write(tagged_json)
+    print("done!")
 
 if __name__ == "__main__":
     main()
