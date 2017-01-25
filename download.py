@@ -115,9 +115,6 @@ def create_tree(entries):
         tag = entry["tag"]
         return levels[tag]
 
-    def is_sibling(a, b):
-        return tag_level(a) == tag_level(b)
-
     def is_child_of(a, b):
         return tag_level(a) > tag_level(b)
 
@@ -129,11 +126,8 @@ def create_tree(entries):
     stack = [{ "tag": "root", "children": [] }]
     for entry in entries:
         node = create_node(entry)
-        if is_sibling(stack[-1], entry):
+        while not is_child_of(node, stack[-1]):
             stack.pop()
-        else:
-            while not is_child_of(node, stack[-1]):
-                stack.pop()
         stack[-1]["children"].append(node)
         stack.append(node)
 
