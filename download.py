@@ -123,7 +123,7 @@ def create_tree(entries):
         node["children"] = []
         return node
 
-    stack = [{ "tag": "root", "children": [] }]
+    stack = [{ "tag": "root", "children": [], "partial_qualifier": "" }]
     for entry in entries:
         node = create_node(entry)
         while not is_child_of(node, stack[-1]):
@@ -133,12 +133,22 @@ def create_tree(entries):
 
     return stack[0]
 
+def qualify_tree(node, parent=None):
+    tag = node["tag"]
+    if tag in ["root", "section", "subsection", "article"]:
+        node["qualifier"] = node["partial_qualifier"]
+    else:
+        node["qualifier"] = "{}.({})".format(parent["qualifier"], node["partial_qualifier"])
+    for child in node["children"]:
+        qualify_tree(child, node)
+
 def main():
     with open(out_file) as f:
         entries = json.loads(f.read())
         tag_entries(entries)
         entries = stitch_fragments(entries)
         tree = create_tree(entries)
+        qualify_tree(tree)
         with open("workspace/tree.json", "w") as f:
             tagged_json = json.dumps(tree, indent = 2)
             f.write(tagged_json)
