@@ -42,8 +42,8 @@ def tag_entries(entries):
     article_re    = re.compile(r"^(\d+\.\d+\.\d+\.\d+)")
     subsection_re = re.compile(r"^(\d+\.\d+\.\d+)")
     sentence_re   = re.compile(r"^\((\d+)\)")
-    clause_re     = re.compile(r"^\(([a-z]+(:?\.\d+)?)\)")
-    subclause_re  = re.compile(r"^\(([ivx]+(:?\.\d+)?)\)")
+    clause_re     = re.compile(r"^\(([a-z]+(?:\.\d+)?)\)")
+    subclause_re  = re.compile(r"^\(([ivx]+(?:\.\d+)?)\)")
 
     def is_section(text, class_name):
         return section_re.match(text)
@@ -100,14 +100,53 @@ def stitch_fragments(entries):
             prev = entry
     return out_entries
 
+def create_tree(entries):
+
+    def tag_level(entry):
+        levels = {
+            "root":       0,
+            "section":    1,
+            "subsection": 2,
+            "article":    3,
+            "sentence":   4,
+            "clause":     5,
+            "subclause":  6
+        }
+        tag = entry["tag"]
+        return levels[tag]
+
+    def is_sibling(a, b):
+        return tag_level(a) == tag_level(b)
+
+    def is_child_of(a, b):
+        return tag_level(a) > tag_level(b)
+
+    def create_node(entry):
+        node = dict(entry)
+        node["children"] = []
+        return node
+
+    stack = [{ "tag": "root", "children": [] }]
+    for entry in entries:
+        node = create_node(entry)
+        if is_sibling(stack[-1], entry):
+            stack.pop()
+        else:
+            while not is_child_of(node, stack[-1]):
+                stack.pop()
+        stack[-1]["children"].append(node)
+        stack.append(node)
+
+    return stack[0]
 
 def main():
     with open(out_file) as f:
         entries = json.loads(f.read())
         tag_entries(entries)
         entries = stitch_fragments(entries)
-        with open("workspace/tagged.json", "w") as f:
-            tagged_json = json.dumps(entries, indent = 2)
+        tree = create_tree(entries)
+        with open("workspace/tree.json", "w") as f:
+            tagged_json = json.dumps(tree, indent = 2)
             f.write(tagged_json)
 
 if __name__ == "__main__":
