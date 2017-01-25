@@ -35,29 +35,58 @@ def download():
         f.write(json.dumps(entries, indent = 2))
     print("done!")
 
-section_re    = re.compile(r"^Section (\d+\.\d+)")
-article_re    = re.compile(r"^(\d+\.\d+\.\d+\.\d+)")
-subsection_re = re.compile(r"^(\d+\.\d+\.\d+)")
-sentence_re   = re.compile(r"^\((\d+)\)")
-clause_re     = re.compile(r"^\(([a-z]+(:?\.\d+)?)\)")
-subclause_re  = re.compile(r"^\(([ivx]+(:?\.\d+)?)\)")
 
-def get_tag(entry):
-    text = entry["text"]
-    class_name = entry["class_name"]
-    if section_re.match(text):
-        return "section"
-    if class_name == "section-e" and article_re.match(text):
-        return "article"
-    if class_name == "ruleb-e" and subsection_re.match(text):
-        return "subsection"
-    if sentence_re.match(text):
-        return "sentence"
-    if class_name == "clause-e" and clause_re.match(text):
-        return "clause"
-    if class_name == "subclause-e" and subclause_re.match(text):
-        return "subclause"
-    return "fragment"
+def tag_entries(entries):
+
+    section_re    = re.compile(r"^Section (\d+\.\d+)")
+    article_re    = re.compile(r"^(\d+\.\d+\.\d+\.\d+)")
+    subsection_re = re.compile(r"^(\d+\.\d+\.\d+)")
+    sentence_re   = re.compile(r"^\((\d+)\)")
+    clause_re     = re.compile(r"^\(([a-z]+(:?\.\d+)?)\)")
+    subclause_re  = re.compile(r"^\(([ivx]+(:?\.\d+)?)\)")
+
+    def is_section(text, class_name):
+        return section_re.match(text)
+
+    def is_article(text, class_name):
+        return class_name == "section-e" and article_re.match(text)
+
+    def is_subsection(text, class_name):
+        return class_name == "ruleb-e" and subsection_re.match(text)
+
+    def is_sentence(text, class_name):
+        return sentence_re.match(text)
+
+    def is_clause(text, class_name):
+        return class_name == "clause-e" and clause_re.match(text)
+
+    def is_subclause(text, class_name):
+        return class_name == "subclause-e" and subclause_re.match(text)
+
+    for entry in entries:
+        text = entry["text"]
+        class_name = entry["class_name"]
+        if is_section(text, class_name):
+            entry["tag"] = "section"
+            entry["partial_qualifier"] = section_re.findall(text)[0]
+        elif is_article(text, class_name):
+            entry["tag"] = "article"
+            entry["partial_qualifier"] = article_re.findall(text)[0]
+        elif is_subsection(text, class_name):
+            entry["tag"] = "subsection"
+            entry["partial_qualifier"] = subsection_re.findall(text)[0]
+        elif is_sentence(text, class_name):
+            entry["tag"] = "sentence"
+            entry["partial_qualifier"] = sentence_re.findall(text)[0]
+        elif is_clause(text, class_name):
+            entry["tag"] = "clause"
+            entry["partial_qualifier"] = clause_re.findall(text)[0]
+        elif is_subclause(text, class_name):
+            entry["tag"] = "subclause"
+            entry["partial_qualifier"] = subclause_re.findall(text)[0]
+        else:
+            entry["tag"] = "fragment"
+            entry["partial_qualifier"] = None
 
 def stitch_fragments(entries):
     prev = None
@@ -71,18 +100,15 @@ def stitch_fragments(entries):
             prev = entry
     return out_entries
 
-def tag_entries():
+
+def main():
     with open(out_file) as f:
         entries = json.loads(f.read())
-        for entry in entries:
-            entry["tag"] = get_tag(entry)
+        tag_entries(entries)
         entries = stitch_fragments(entries)
         with open("workspace/tagged.json", "w") as f:
             tagged_json = json.dumps(entries, indent = 2)
             f.write(tagged_json)
-
-def main():
-    tag_entries()
 
 if __name__ == "__main__":
     main()
