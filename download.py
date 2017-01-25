@@ -6,9 +6,6 @@ import ipdb
 import re
 from BeautifulSoup import BeautifulSoup
 
-
-
-
 def tag_entries(entries):
 
     section_re    = re.compile(r"^Section (\d+\.\d+)")
