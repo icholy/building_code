@@ -137,6 +137,14 @@ def download_entries():
     elements = soup("p", { "class": class_names })
     return [ parse_element(e) for e in elements ]
 
+def clean_up_tree(node):
+    del node["partial_qualifier"]
+    if node["tag"] != "root":
+        del node["class_name"]
+        del node["text"]
+    for child in node["children"]:
+        clean_up_tree(child)
+
 def main():
     entries = download_entries()
     tag_entries(entries)
@@ -144,6 +152,7 @@ def main():
     print("parsing {} entries into tree ...".format(len(entries)))
     tree = create_tree(entries)
     qualify_tree(tree)
+    clean_up_tree(tree)
     out_file = "workspace/tree.json"
     print("writing to {} ...".format(out_file))
     with open(out_file, "w") as f:
