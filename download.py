@@ -27,7 +27,7 @@ def download():
     lines = [ inner_html(e) for e in elements ]
     print("writing {} lines to {} ...".format(len(lines), out_file))
     with open(out_file, "w") as f:
-        json.dump(f, lines, indent = 2)
+        f.write(json.dumps(lines, indent = 2))
     print("done!")
 
 def main():
