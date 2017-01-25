@@ -18,7 +18,7 @@ out_file = "workspace/raw.json"
 def inner_html(e):
     return "".join([str(x) for x in e.contents])
 
-def main():
+def download():
     print("fetching {}".format(url))
     resp = requests.get(url)
     print("parsing html ...")
@@ -29,6 +29,9 @@ def main():
     with open(out_file, "w") as f:
         json.dump(f, lines, indent = 2)
     print("done!")
+
+def main():
+    download()
 
 if __name__ == "__main__":
     main()
