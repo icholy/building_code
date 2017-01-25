@@ -35,12 +35,12 @@ def download():
         f.write(json.dumps(entries, indent = 2))
     print("done!")
 
-section_re    = re.compile(r"^Section \d+\.\d+")
-article_re    = re.compile(r"^\d+\.\d+\.\d+\.\d+")
-subsection_re = re.compile(r"^\d+\.\d+\.\d+")
-sentence_re   = re.compile(r"^\(\d+\)")
-clause_re     = re.compile(r"^\([a-z]+(\.\d+)?\)")
-subclause_re  = re.compile(r"^\([ivx]+(\.\d+)?\)")
+section_re    = re.compile(r"^Section (\d+\.\d+)")
+article_re    = re.compile(r"^(\d+\.\d+\.\d+\.\d+)")
+subsection_re = re.compile(r"^(\d+\.\d+\.\d+)")
+sentence_re   = re.compile(r"^\((\d+)\)")
+clause_re     = re.compile(r"^\(([a-z]+(:?\.\d+)?)\)")
+subclause_re  = re.compile(r"^\(([ivx]+(:?\.\d+)?)\)")
 
 def get_tag(entry):
     text = entry["text"]
