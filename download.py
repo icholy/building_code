@@ -35,12 +35,12 @@ def download():
         f.write(json.dumps(entries, indent = 2))
     print("done!")
 
-section_re    = re.compile(r"Section \d+\.\d+")
-article_re    = re.compile(r"\d+\.\d+\.\d+\.\d+")
-subsection_re = re.compile(r"\d+\.\d+\.\d+")
-sentence_re   = re.compile(r"\(\d+\)")
-clause_re     = re.compile(r"\([a-z]+(\.\d+)?\)")
-subclause_re  = re.compile(r"\([ivx]+(\.\d+)?\)")
+section_re    = re.compile(r"^Section \d+\.\d+")
+article_re    = re.compile(r"^\d+\.\d+\.\d+\.\d+")
+subsection_re = re.compile(r"^\d+\.\d+\.\d+")
+sentence_re   = re.compile(r"^\(\d+\)")
+clause_re     = re.compile(r"^\([a-z]+(\.\d+)?\)")
+subclause_re  = re.compile(r"^\([ivx]+(\.\d+)?\)")
 
 def get_tag(entry):
     text = entry["text"]
@@ -59,11 +59,24 @@ def get_tag(entry):
         return "subclause"
     return "fragment"
 
+def stitch_fragments(entries):
+    prev = None
+    out_entries = []
+    for entry in entries:
+        if entry["tag"] == "fragment":
+            prev["html"] += " " + entry["html"]
+            prev["text"] += " " + entry["text"]
+        else:
+            out_entries.append(entry)
+            prev = entry
+    return out_entries
+
 def tag_entries():
     with open(out_file) as f:
         entries = json.loads(f.read())
         for entry in entries:
             entry["tag"] = get_tag(entry)
+        entries = stitch_fragments(entries)
         with open("workspace/tagged.json", "w") as f:
             tagged_json = json.dumps(entries, indent = 2)
             f.write(tagged_json)
